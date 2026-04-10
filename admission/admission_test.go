@@ -89,3 +89,13 @@ func TestCounters_TrackBothOutcomes(t *testing.T) {
 		t.Fatalf("rejected: got %d, want 2", c.Rejected())
 	}
 }
+
+func TestCounters_InitialStateIsZero(t *testing.T) {
+	c := admission.New()
+	if c.Admitted() != 0 {
+		t.Fatalf("admitted: got %d, want 0 before any requests", c.Admitted())
+	}
+	if c.Rejected() != 0 {
+		t.Fatalf("rejected: got %d, want 0 before any requests", c.Rejected())
+	}
+}
