@@ -64,6 +64,16 @@ func (l *Limiter) Tokens() float64 {
 	return tokens
 }
 
+// Reset restores the limiter to its initial state, filling the token bucket
+// to its maximum capacity and resetting the refill timer.
+func (l *Limiter) Reset() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	l.tokens = l.max
+	l.lastTick = l.now()
+}
+
 // Middleware returns an http.Handler that rejects requests with 429 when the
 // rate limit is exceeded.
 func (l *Limiter) Middleware(next http.Handler) http.Handler {
