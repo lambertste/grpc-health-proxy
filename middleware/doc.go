@@ -20,5 +20,14 @@
 //
 // Chain composes multiple middleware functions into a single [http.Handler].
 // Middleware is applied in the order it is passed, so the first argument wraps
-// the outermost layer of the call stack.
+// the outermost layer of the call stack.  For example:
+//
+//	handler := middleware.Chain(
+//		h,
+//		middleware.Logging(logger),
+//		middleware.Metrics(counter, histogram),
+//	)
+//
+// In this example, Logging runs first (outermost), followed by Metrics, and
+// finally the base handler h.
 package middleware
