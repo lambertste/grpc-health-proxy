@@ -50,6 +50,20 @@ func (l *Limiter) Allow() bool {
 	return true
 }
 
+// Tokens returns the current number of available tokens without consuming any.
+func (l *Limiter) Tokens() float64 {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
+	now := l.now()
+	elapsed := now.Sub(l.lastTick).Seconds()
+	tokens := l.tokens + elapsed*l.rate
+	if tokens > l.max {
+		tokens = l.max
+	}
+	return tokens
+}
+
 // Middleware returns an http.Handler that rejects requests with 429 when the
 // rate limit is exceeded.
 func (l *Limiter) Middleware(next http.Handler) http.Handler {
