@@ -57,3 +57,9 @@ func (c Config) Build() (*tls.Config, error) {
 
 	return tlsCfg, nil
 }
+
+// IsMutualTLS reports whether the configuration has both a client certificate
+// and key set, indicating that mutual TLS will be used.
+func (c Config) IsMutualTLS() bool {
+	return c.ClientCert != "" && c.ClientKey != ""
+}
