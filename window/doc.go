@@ -19,6 +19,15 @@
 //	// Query the total within the rolling window.
 //	fmt.Println(c.Count())
 //
+// # Bucket Granularity
+//
+// The precision of the counter is determined by the bucket width, which equals
+// window duration divided by the number of buckets. For example, a 60-second
+// window with 60 buckets yields one-second granularity, meaning events older
+// than the current second boundary may be evicted up to one second early.
+// Increase the bucket count to improve precision at the cost of slightly more
+// memory.
+//
 // # Thread Safety
 //
 // Counter is safe for concurrent use by multiple goroutines.
