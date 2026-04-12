@@ -118,3 +118,32 @@ func TestInflight_TracksActiveRequests(t *testing.T) {
 	}
 	close(done)
 }
+
+func TestDo_ErrorSharedAmongCallers(t *testing.T) {
+	// Verify that when the fn returns an error, all concurrent callers
+	// receive the same error value (not just the first caller).
+	g := New()
+	sentinel := errors.New("shared error")
+	errs := make([]error, 5)
+	var wg sync.WaitGroup
+
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		idx := i
+		go func() {
+			defer wg.Done()
+			_, err := g.Do(context.Background(), "errkey", func(ctx context.Context) (interface{}, error) {
+				time.Sleep(10 * time.Millisecond)
+				return nil, sentinel
+			})
+			errs[idx] = err
+		}()
+	}
+	wg.Wait()
+
+	for i, err := range errs {
+		if !errors.Is(err, sentinel) {
+			t.Errorf("caller %d got err %v, want sentinel", i, err)
+		}
+	}
+}
