@@ -11,6 +11,9 @@ import (
 	"time"
 )
 
+// DefaultDeadline is the shutdown deadline used when none is specified.
+const DefaultDeadline = 15 * time.Second
+
 // Drainer tracks active requests and coordinates graceful shutdown.
 type Drainer struct {
 	mu       sync.Mutex
@@ -21,9 +24,8 @@ type Drainer struct {
 }
 
 // New creates a Drainer with the given shutdown deadline.
-// If deadline is zero, DefaultDeadline is used.
+// If deadline is zero or negative, DefaultDeadline is used.
 func New(deadline time.Duration) *Drainer {
-	const DefaultDeadline = 15 * time.Second
 	if deadline <= 0 {
 		deadline = DefaultDeadline
 	}
@@ -51,6 +53,11 @@ func (d *Drainer) Middleware(next http.Handler) http.Handler {
 // Inflight returns the number of requests currently being handled.
 func (d *Drainer) Inflight() int64 {
 	return atomic.LoadInt64(&d.inflight)
+}
+
+// IsDraining reports whether the server is in the process of shutting down.
+func (d *Drainer) IsDraining() bool {
+	return d.draining.Load()
 }
 
 // Shutdown signals that the server is draining and blocks until all
