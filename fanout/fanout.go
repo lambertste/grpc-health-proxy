@@ -6,6 +6,7 @@ package fanout
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -67,9 +68,22 @@ func (g *Group) Do(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	// All failed – write first response.
+	// All failed – write first response and include status codes in error.
 	writeRecorder(w, results[0].rec)
-	return ErrAllFailed
+	return fmt.Errorf("%w: status codes: %s", ErrAllFailed, statusSummary(results))
+}
+
+// statusSummary returns a compact string listing each backend index and its
+// HTTP status code, e.g. "[0]=503 [1]=404".
+func statusSummary(results []result) string {
+	summary := ""
+	for _, res := range results {
+		if summary != "" {
+			summary += " "
+		}
+		summary += fmt.Sprintf("[%d]=%d", res.index, res.status)
+	}
+	return summary
 }
 
 // ServeHTTP implements http.Handler using Do, ignoring any returned
