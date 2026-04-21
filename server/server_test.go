@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -86,6 +87,24 @@ func TestHandleHealth_Failure(t *testing.T) {
 	json.NewDecoder(w.Body).Decode(&response)
 	if response["status"] != "NOT_SERVING" {
 		t.Errorf("Expected status NOT_SERVING, got %s", response["status"])
+	}
+}
+
+func TestHandleHealth_CheckerError(t *testing.T) {
+	cfg := &config.Config{
+		HTTPPort: 8080,
+		Timeout:  5 * time.Second,
+	}
+	checker := &mockChecker{err: errors.New("connection refused")}
+	s := New(cfg, checker)
+
+	req := httptest.NewRequest("GET", "/health", nil)
+	w := httptest.NewRecorder()
+
+	s.handleHealth(w, req)
+
+	if w.Code != http.StatusServiceUnavailable {
+		t.Errorf("Expected status 503 on checker error, got %d", w.Code)
 	}
 }
 
