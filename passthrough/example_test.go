@@ -77,3 +77,37 @@ func ExampleNew_multipleConditions() {
 	// options: 204
 	// head: 200
 }
+
+// ExampleNew_pathPrefix demonstrates bypassing the primary handler for
+// requests whose path matches a specific prefix, such as a health-check route.
+func ExampleNew_pathPrefix() {
+	primary := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "app")
+	})
+
+	healthz := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, "healthy")
+	})
+
+	// Route /healthz to the dedicated healthz handler; everything else to primary.
+	isHealthz := passthrough.ConditionFunc(func(r *http.Request) bool {
+		return r.URL.Path == "/healthz"
+	})
+	h := passthrough.New(primary, isHealthz, healthz)
+
+	hReq := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, hReq)
+	fmt.Println("healthz:", w.Code)
+
+	appReq := httptest.NewRequest(http.MethodGet, "/users", nil)
+	w2 := httptest.NewRecorder()
+	h.ServeHTTP(w2, appReq)
+	fmt.Println("app:", w2.Code)
+
+	// Output:
+	// healthz: 200
+	// app: 200
+}
